@@ -6,6 +6,7 @@ import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 
 public class Main {
   public static void main(String[] args) {
@@ -41,6 +42,20 @@ public class Main {
 
       final String message = readMessage(in);
       System.out.println("message = " + message);
+
+      // hardcoded known commands
+      switch (message) {
+        case "time": // if (message.equals("time") {...}
+          final Instant now = Instant.now();
+          out.write(now.toString().getBytes(StandardCharsets.UTF_8));
+          break;
+        case "shutdown":  // else if (message.equals("shutdown") {...}
+          out.write("Ok, shutdown server".getBytes(StandardCharsets.UTF_8));
+          System.exit(0); // danger, finally не срабатывает
+          break;
+        default: // else {...}
+          out.write("Unknown command\n".getBytes(StandardCharsets.UTF_8));
+      }
     }
   }
 
