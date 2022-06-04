@@ -1,8 +1,11 @@
 package org.example;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 
 public class Main {
   public static void main(String[] args) {
@@ -13,10 +16,44 @@ public class Main {
     ) {
       while (true) {
         // блокирующий вызов
-        final Socket socket = serverSocket.accept();
-        System.out.println("accepted");
+        try (
+            final Socket socket = serverSocket.accept();
+            final OutputStream out = socket.getOutputStream();
+            final InputStream in = socket.getInputStream();
+        ) {
+          System.out.println(socket.getInetAddress());
+          out.write("Enter command\n".getBytes(StandardCharsets.UTF_8));
+
+          final byte[] buffer = new byte[4096];
+          int offset = 0;
+          int length = buffer.length;
+          // внутренний цикл чтения команды
+          while (true) {
+            final int read = in.read(buffer, offset, length); // read - сколько байт было прочитано
+            offset += read; // offset = offset + read;
+            length = buffer.length - offset;
+
+            final byte lastByte = buffer[offset - 1];
+            // если клиент прислал \n (Enter), значит он закончил вводить сообщение
+            if (lastByte == '\n') { // 13 - \r, 10 - \n
+              break;
+            }
+          }
+          final String message = new String(
+              buffer,
+              0,
+              buffer.length - length,
+              StandardCharsets.UTF_8
+          ).trim();
+          System.out.println("message = " + message);
+        } catch (Exception e) {
+          // если произошла любая проблема с клиентом
+          e.printStackTrace();
+        }
       }
     } catch (IOException e) {
+      // если не удалось запустить сервер
+      e.printStackTrace();
     }
   }
 }
