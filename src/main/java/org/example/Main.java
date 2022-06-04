@@ -1,5 +1,8 @@
 package org.example;
 
+import com.google.common.primitives.Bytes;
+import org.example.exception.BadRequestException;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -38,28 +41,23 @@ public class Main {
         final InputStream in = socket.getInputStream();
     ) {
       System.out.println(socket.getInetAddress());
-      out.write("Enter command\n".getBytes(StandardCharsets.UTF_8));
 
       final String message = readMessage(in);
       System.out.println("message = " + message);
 
-      // hardcoded known commands
-      switch (message) {
-        case "time": // if (message.equals("time") {...}
-          final Instant now = Instant.now();
-          out.write(now.toString().getBytes(StandardCharsets.UTF_8));
-          break;
-        case "shutdown":  // else if (message.equals("shutdown") {...}
-          out.write("Ok, shutdown server".getBytes(StandardCharsets.UTF_8));
-          System.exit(0); // danger, finally не срабатывает
-          break;
-        default: // else {...}
-          out.write("Unknown command\n".getBytes(StandardCharsets.UTF_8));
-      }
+      // Ctrl + Alt + L - форматирование
+      final String response = "HTTP/1.1 200 OK\r\n" +
+          "Connection: close\r\n" +
+          "Content-Length: 2\r\n" +
+          "\r\n" +
+          "OK";
+
+      out.write(response.getBytes(StandardCharsets.UTF_8));
     }
   }
 
   private static String readMessage(final InputStream in) throws IOException {
+    final byte[] CRLFCRLF = {'\r', '\n', '\r', '\n'}; // TODO: move to constants
     final byte[] buffer = new byte[4096];
     int offset = 0;
     int length = buffer.length;
@@ -69,10 +67,14 @@ public class Main {
       offset += read; // offset = offset + read;
       length = buffer.length - offset;
 
-      final byte lastByte = buffer[offset - 1];
-      // если клиент прислал \n (Enter), значит он закончил вводить сообщение
-      if (lastByte == '\n') { // 13 - \r, 10 - \n
+      final int headersEndIndex = Bytes.indexOf(buffer, CRLFCRLF);
+      if (headersEndIndex != -1) {
         break;
+      }
+
+      // TODO: read timeout
+      if (read == 0 || length == 0) {
+        throw new BadRequestException("CRLFCRLF not found");
       }
     }
     final String message = new String(
