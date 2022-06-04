@@ -16,36 +16,9 @@ public class Main {
     ) {
       while (true) {
         // блокирующий вызов
-        try (
-            final Socket socket = serverSocket.accept();
-            final OutputStream out = socket.getOutputStream();
-            final InputStream in = socket.getInputStream();
-        ) {
-          System.out.println(socket.getInetAddress());
-          out.write("Enter command\n".getBytes(StandardCharsets.UTF_8));
-
-          final byte[] buffer = new byte[4096];
-          int offset = 0;
-          int length = buffer.length;
-          // внутренний цикл чтения команды
-          while (true) {
-            final int read = in.read(buffer, offset, length); // read - сколько байт было прочитано
-            offset += read; // offset = offset + read;
-            length = buffer.length - offset;
-
-            final byte lastByte = buffer[offset - 1];
-            // если клиент прислал \n (Enter), значит он закончил вводить сообщение
-            if (lastByte == '\n') { // 13 - \r, 10 - \n
-              break;
-            }
-          }
-          final String message = new String(
-              buffer,
-              0,
-              buffer.length - length,
-              StandardCharsets.UTF_8
-          ).trim();
-          System.out.println("message = " + message);
+        try {
+          final Socket socket = serverSocket.accept();
+          handleClient(socket);
         } catch (Exception e) {
           // если произошла любая проблема с клиентом
           e.printStackTrace();
@@ -55,5 +28,44 @@ public class Main {
       // если не удалось запустить сервер
       e.printStackTrace();
     }
+  }
+
+  private static void handleClient(final Socket socket) throws IOException {
+    try (
+        socket;
+        final OutputStream out = socket.getOutputStream();
+        final InputStream in = socket.getInputStream();
+    ) {
+      System.out.println(socket.getInetAddress());
+      out.write("Enter command\n".getBytes(StandardCharsets.UTF_8));
+
+      final String message = readMessage(in);
+      System.out.println("message = " + message);
+    }
+  }
+
+  private static String readMessage(final InputStream in) throws IOException {
+    final byte[] buffer = new byte[4096];
+    int offset = 0;
+    int length = buffer.length;
+    // внутренний цикл чтения команды
+    while (true) {
+      final int read = in.read(buffer, offset, length); // read - сколько байт было прочитано
+      offset += read; // offset = offset + read;
+      length = buffer.length - offset;
+
+      final byte lastByte = buffer[offset - 1];
+      // если клиент прислал \n (Enter), значит он закончил вводить сообщение
+      if (lastByte == '\n') { // 13 - \r, 10 - \n
+        break;
+      }
+    }
+    final String message = new String(
+        buffer,
+        0,
+        buffer.length - length,
+        StandardCharsets.UTF_8
+    ).trim();
+    return message;
   }
 }
