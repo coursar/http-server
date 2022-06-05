@@ -1,4 +1,4 @@
-package org.example.exception;
+package org.example.server.exception;
 
 // Alt + Insert -> Constructor
 // Ctrl + A
