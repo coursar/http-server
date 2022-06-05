@@ -1,6 +1,9 @@
 package org.example;
 
 import com.google.common.primitives.Bytes;
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.example.exception.BadRequestException;
 import org.example.exception.DeadlineExceedException;
 
@@ -11,15 +14,16 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 
+@Setter
 public class Server {
 
   public static final byte[] CRLFCRLF = {'\r', '\n', '\r', '\n'};
-  private final int port = 9999;
-  private final int soTimeout = 30 * 1000;
-  private final int readTimeout = 60 * 1000;
-  private final int bufferSize = 4096;
+  private int port = 9999;
+  private int soTimeout = 30 * 1000;
+  private int readTimeout = 60 * 1000;
+  private int bufferSize = 4096;
+
 
   public void start() {
     // ServerSocket
