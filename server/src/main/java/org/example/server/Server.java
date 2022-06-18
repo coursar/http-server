@@ -2,6 +2,7 @@ package org.example.server;
 
 import com.google.common.primitives.Bytes;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import org.example.server.exception.BadRequestException;
 import org.example.server.exception.DeadlineExceedException;
 
@@ -16,6 +17,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Setter
+@Slf4j
 public class Server {
 
   public static final byte[] CRLFCRLF = {'\r', '\n', '\r', '\n'};
@@ -60,10 +62,10 @@ public class Server {
     ) {
       socket.setSoTimeout(soTimeout);
 
-      System.out.println(socket.getInetAddress());
+      log.debug("client ip address: {}", socket.getInetAddress());
 
       final Request request = readRequest(in);
-      System.out.println("request = " + request);
+      log.debug("request: {}", request);
 
       final Handler handler = routes.get(request.getPath());
       // 1. handler != null (значит, такой ключ есть)
@@ -128,7 +130,6 @@ public class Server {
         requestLineEndIndex,
         StandardCharsets.UTF_8
     );
-    System.out.println("requestLine = " + requestLine);
 
     final String[] parts = requestLine.split(" ");
     request.setMethod(parts[0]);
